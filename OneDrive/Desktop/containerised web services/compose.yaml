@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  database:
+    image: mongo:latest
+    container_name: crud_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - crud_network
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    container_name: crud_api
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://database:27017/crud_db
+      - PORT=3000
+    depends_on:
+      - database
+    networks:
+      - crud_network
+    restart: unless-stopped
+
+  worker:
+    build: ./worker
+    container_name: crud_worker
+    environment:
+      - MONGO_URI=mongodb://database:27017/crud_db
+    depends_on:
+      - database
+      - api
+    networks:
+      - crud_network
+    restart: unless-stopped
+
+networks:
+  crud_network:
+    driver: bridge
+
+volumes:
+  mongo_data:
